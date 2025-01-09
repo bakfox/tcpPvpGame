@@ -1,0 +1,26 @@
+{
+	"dependencies": {
+		"dotenv": "^16.4.7",
+		"lodash": "^4.17.21",
+		"long": "^5.2.3",
+		"mysql2": "^3.12.0",
+		"protobufjs": "^7.4.0",
+		"uuid": "^11.0.4"
+	},
+	"devDependencies": {
+		"nodemon": "^3.1.9",
+		"prettier": "^3.4.2"
+	},
+	"name": "tcppvpgame",
+	"version": "1.0.0",
+	"main": "src/server.js",
+	"scripts": {
+		"migrate": "node src/db/migration/createSchemas.js",
+		"start": "node src/server.js"
+	},
+	"type": "module",
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"description": ""
+}
