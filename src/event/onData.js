@@ -30,7 +30,10 @@ export const onData = (socket) => async (data) => {
 							const pingMessage = Ping.decode(packet);
 							const user = getUserBySocket(socket);
 							if (!user) {
-								throw new CustomError(ErrorCodes.USER_NOT_FOUND, "유저를 찾을 수 없습니다!");
+								throw new CustomError(
+									ErrorCodes.USER_NOT_FOUND,
+									"유저를 찾을 수 없습니다!"
+								);
 							}
 							user.handlePong(pingMessage);
 						}

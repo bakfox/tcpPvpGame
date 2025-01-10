@@ -23,6 +23,7 @@ const joinGameHandler = ({ socket, userId, payload }) => {
 		}
 
 		const existUser = gameSession.getUser(userId);
+
 		if (!existUser) {
 			gameSession.addUser(user);
 		}

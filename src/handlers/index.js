@@ -3,7 +3,7 @@ import customError from "../utils/error/customError.js";
 import { erroCode } from "../utils/error/errorCodes.js";
 import createGameHandler from "./game/createGameHandler.js";
 import joinGameHandler from "./game/joinGameHandler.js";
-import locationUpdateHandler from "./game/LocationupdateHandler.js";
+import locationUpdateHandler from "./game/locationUpdateHandler.js";
 import initalHandler from "./user/initialHandler.js";
 
 // 핸들러 아이디 맵핑입니다!
