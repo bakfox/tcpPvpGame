@@ -1,3 +1,4 @@
+import { INTERVAL_TYPE } from "../../constants/interval.js";
 import { handlerError } from "../../utils/error/errorHandler.js";
 
 const locationUpdateHandler = ({ socket, userId, payload }) => {
@@ -13,9 +14,15 @@ const locationUpdateHandler = ({ socket, userId, payload }) => {
 			throw new CustomError(ErrorCodes.USER_NOT_FOUND, "유저를 찾을 수 없습니다.");
 		}
 		user.updatePosition(x, y);
-		const packet = gameSession.getAllLocation();
-
-		socket.write(packet);
+		if (x === 0 && y === 0) {
+			gameSession.intervalManager.removeInterval(userId, INTERVAL_TYPE.UPDATE_POSITION);
+		} else {
+			gameSession.intervalManager.addUpdatePosition(
+				user.id,
+				gameSession.setAllLocation.bind(gameSession, userId),
+				100
+			);
+		}
 	} catch (error) {
 		handlerError(socket, error);
 	}
