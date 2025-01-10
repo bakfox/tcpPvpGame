@@ -1,7 +1,10 @@
-import { gameStartNotification } from "../../utils/notification/gameNotification.js";
+import {
+	createLocationPacket,
+	gameStartNotification,
+} from "../../utils/notification/gameNotification.js";
 import IntervalManager from "../managers/intervalManager.js";
 
-const MAX_PLAYERS = 2;
+export const MAX_PLAYERS = 2;
 
 class Game {
 	constructor(id) {
@@ -17,7 +20,7 @@ class Game {
 		}
 		this.users.push(user);
 
-		this.intervalManager.addPlayer(user.id, user.ping.bind(user), 1000);
+		//this.intervalManager.addPlayer(user.id, user.ping.bind(user), 1000);
 		if (this.users.length === MAX_PLAYERS) {
 			setTimeout(() => {
 				this.startGame();
@@ -60,13 +63,16 @@ class Game {
 		});
 	}
 
-	getAllLocation() {
+	// 호출시 모두에게 보내주기
+	setAllLocation(userId) {
 		const maxLatency = this.getMaxLatency();
-		const locationData = this.user.map((user) => {
-			const { x, y } = user.calculatePosition(maxLatency);
-			return { id: user.id, x, y };
+		const user = this.getUser(userId);
+		const { x, y } = user.calculatePosition(maxLatency); // 다음 움직임 위치
+		const locationData = { id: user.id, x, y };
+		const locationPacket = createLocationPacket(locationData);
+		this.users.forEach((data) => {
+			data.socket.write(locationPacket);
 		});
-		return createLocationPacket(locationData);
 	}
 }
 
