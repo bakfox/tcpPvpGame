@@ -20,7 +20,7 @@ class Game {
 		}
 		this.users.push(user);
 
-		//this.intervalManager.addPlayer(user.id, user.ping.bind(user), 1000);
+		this.intervalManager.addPlayer(user.id, user.ping.bind(user), 1000);
 		if (this.users.length === MAX_PLAYERS) {
 			setTimeout(() => {
 				this.startGame();
@@ -64,10 +64,10 @@ class Game {
 	}
 
 	// 호출시 모두에게 보내주기
-	setAllLocation(userId) {
+	setAllLocation(userId, timestamp = 0) {
 		const maxLatency = this.getMaxLatency();
 		const user = this.getUser(userId);
-		const { x, y } = user.calculatePosition(maxLatency); // 다음 움직임 위치
+		const { x, y } = user.calculatePosition(maxLatency, timestamp); // 다음 움직임 위치
 		const locationData = { id: user.id, x, y };
 		const locationPacket = createLocationPacket(locationData);
 		this.users.forEach((data) => {
