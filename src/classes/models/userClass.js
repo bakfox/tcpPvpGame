@@ -21,6 +21,7 @@ class User {
 		this.nextY = 0;
 		this.lookX = 0;
 		this.lookY = 0;
+		this.isMove = false;
 
 		this.sequence = 0;
 		this.lastUpdateTime = Date.now();
@@ -37,15 +38,20 @@ class User {
 
 	// 서로 주고 받을때 증가해서 확인하는 역할!
 	getNextSequence() {
-		return ++this.sequence;
+		++this.sequence;
+		console.log(this.sequence);
+		return this.sequence;
 	}
 
 	// 다음 도착 목표 위치 계산
-	calculatePosition(latency) {
+	calculatePosition(latency, timestamp) {
 		const timeDiff = latency / 1000;
 		const spead = 1;
 		const distance = spead * timeDiff;
-
+		console.log("움직임 호출중", this.lookX, timestamp);
+		if (timestamp !== 0) {
+			console.log(timestamp);
+		}
 		if (this.nextX !== 0) {
 			this.x = this.nextX;
 		}
@@ -53,8 +59,8 @@ class User {
 			this.y = this.nextY;
 		}
 
-		this.nextX = this.x + distance * lookX;
-		this.nextY = this.y + distance * lookY;
+		this.nextX = this.x + distance * this.lookX;
+		this.nextY = this.y + distance * this.lookY;
 
 		this.lastUpdateTime = Date.now();
 
@@ -67,16 +73,14 @@ class User {
 	// 핑 보내기
 	ping() {
 		const now = Date.now();
-
-		console.log(`${this.id}: ping`);
 		this.socket.write(createPingPacket(now));
 	}
 
 	// 핑 받기
 	handlePong(data) {
-		const now = Date.now();
-		this.latency = (now - data.timestamp) / 2; //나누기 2 하는 이유는 왕복이라 그렇다!
-		console.log(this.latency, "ms");
+		const now = Date.now() / 1000;
+		const pongTime = data.timestamp.high * Math.pow(2, 32) + data.timestamp.low;
+		this.latency = (now - pongTime) / 2;
 	}
 }
 
