@@ -3,7 +3,13 @@ import { PACKET_TYPE } from "../../constants/header.js";
 import { getProtoMessages } from "../../init/loadProtos.js";
 import { getNextSequence } from "../../session/userSession.js";
 
-export const createResponse = (handlerId, responseCode, data = null, userId) => {
+export const createResponse = (
+	handlerId,
+	responseCode,
+	data = null,
+	userId,
+	type = PACKET_TYPE.NORMAL
+) => {
 	const protoMessages = getProtoMessages();
 	const Response = protoMessages.response.Response;
 
@@ -23,7 +29,7 @@ export const createResponse = (handlerId, responseCode, data = null, userId) => 
 	);
 
 	const packeType = Buffer.alloc(config.packet.typeLength);
-	packeType.writeUint8(PACKET_TYPE.NORMAL);
+	packeType.writeUint8(type);
 
 	return Buffer.concat([packetLength, packeType, buffer]);
 };
