@@ -1,3 +1,4 @@
+import { MAX_PLAYERS } from "../../classes/models/gameClass.js";
 import { HANDLER_IDS, RESPONSE_SUCCESS_CODE } from "../../constants/handlerId.js";
 import { getGameSession } from "../../session/gameSession.js";
 import { getUserById } from "../../session/userSession.js";
@@ -21,19 +22,37 @@ const joinGameHandler = ({ socket, userId, payload }) => {
 		if (!user) {
 			throw new CustomError(erroCode.USER_NOT_FOUND, "유저를 찾을 수 없습니다.");
 		}
+		gameSession.addUser(user);
 
-		const existUser = gameSession.getUser(userId);
-		if (!existUser) {
-			gameSession.addUser(user);
-		}
+		const userData = [];
 
-		const joinGameResponse = createResponse(
+		gameSession.users.forEach((data) => {
+			const dataTemp = {
+				id: data.id,
+				level: data.level,
+				exp: data.exp,
+				expMax: data.expMax,
+				x: data.x,
+				y: data.y,
+				defaultBullet: data.defaultBullets,
+				defaultSpead: data.defaultAtck,
+				defaultAtck: data.defaultAtck,
+				defaultHp: data.defaultHp,
+				upgradeAtck: data.upgradeAtck,
+				upgradeHp: data.upgradeHp,
+			};
+			userData.push(dataTemp);
+		});
+
+		const createGameResponse = createResponse(
 			HANDLER_IDS.JOIN_GAME,
 			RESPONSE_SUCCESS_CODE,
-			{ gameId, message: "게임에 참가했습니다!" },
-			user.id
+			{ gameId, maxPlayer: MAX_PLAYERS, users: userData },
+			userId
 		);
-		socket.write(joinGameResponse);
+		gameSession.users.forEach((data) => {
+			data.socket.write(createGameResponse);
+		});
 	} catch (error) {
 		handlerError(socket, error);
 	}

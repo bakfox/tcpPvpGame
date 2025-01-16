@@ -10,7 +10,6 @@ message CreateGamePayload {
 // 게임 참가
 message JoinGamePayload {
   string gameId = 1;
-  int64 timestamp = 2;
 }
 
 // 위치 동기화
@@ -18,4 +17,16 @@ message LocationUpdatePayload {
   string gameId = 1;
   float x = 2;
   float y = 3;
+  int64 timestamp = 4;
+}
+
+message EmoticonPayload {
+  uint32 emoticonId = 1;
+  string gameId = 2;
+}
+
+message RotationUpdatePayload{
+  string gameId = 1;
+  float z = 2;
+  int64 timestamp = 3; 
 }

@@ -10,6 +10,8 @@ export const packetNames = {
 		CreateGamePayload: "game.CreateGamePayload",
 		JoinGamePayload: "game.JoinGamePayload",
 		LocationUpdatePayload: "game.LocationUpdatePayload",
+		EmoticonPayload: "game.EmoticonPayload",
+		RotationUpdatePayload: "game.RotationUpdatePayload",
 	},
 	response: {
 		Response: "response.Response",
@@ -17,5 +19,7 @@ export const packetNames = {
 	gameNotification: {
 		Start: "gameNotification.Start",
 		LocationUpdate: "gameNotification.LocationUpdate",
+		EmoticonUpdate: "gameNotification.EmoticonUpdate",
+		ShotUpdate: "gameNotification.ShotUpdate",
 	},
 };

@@ -6,6 +6,7 @@ import { erroCode } from "../../utils/error/errorCodes.js";
 import { createResponse } from "../../utils/response/createResponse.js";
 import { HANDLER_IDS, RESPONSE_SUCCESS_CODE } from "../../constants/handlerId.js";
 import { handlerError } from "../../utils/error/errorHandler.js";
+import { MAX_PLAYERS } from "../../classes/models/gameClass.js";
 
 // 게임 새션 만들기 입니다! 다른 유저는 gameId를 통해서 입장 가능!
 const createGameHandler = ({ socket, userId, payload }) => {
@@ -17,12 +18,28 @@ const createGameHandler = ({ socket, userId, payload }) => {
 		if (!user) {
 			throw new customError(erroCode.USER_NOT_FOUND, "유저를 찾을 수 없습니다.");
 		}
+
 		gameSession.addUser(user);
+
+		const userData = {
+			id: user.id,
+			level: user.level,
+			exp: user.exp,
+			expMax: user.expMax,
+			x: user.x,
+			y: user.y,
+			defaultBullet: user.defaultBullets,
+			defaultSpead: user.defaultAtck,
+			defaultAtck: user.defaultAtck,
+			defaultHp: user.defaultHp,
+			upgradeAtck: user.upgradeAtck,
+			upgradeHp: user.upgradeHp,
+		};
 
 		const createGameResponse = createResponse(
 			HANDLER_IDS.CREATE_GAME,
 			RESPONSE_SUCCESS_CODE,
-			{ gameId, message: "게임이 생성되었습니다!" },
+			{ gameId, maxPlayer: MAX_PLAYERS, users: [userData] },
 			userId
 		);
 
