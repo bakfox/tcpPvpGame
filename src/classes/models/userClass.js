@@ -8,19 +8,24 @@ class User {
 		this.level = 1;
 		this.exp = 0;
 		this.expMax = 10;
-		this.defaultSpead = 1;
+		this.defaultBullets = 5;
+		this.defaultSpeed = 1;
 		this.defaultAtck = 1;
 		this.defaultHp = 10;
+		this.hp = this.defaultHp;
 
 		this.upgradeAtck = 0;
 		this.upgradeHp = 0;
 
 		this.x = 0;
 		this.y = 0;
+
 		this.nextX = 0;
 		this.nextY = 0;
+
 		this.lookX = 0;
 		this.lookY = 0;
+
 		this.isMove = false;
 
 		this.sequence = 0;
@@ -45,17 +50,12 @@ class User {
 
 	// 다음 도착 목표 위치 계산
 	calculatePosition(latency, timestamp) {
-		const timeDiff = latency / 1000;
-		const spead = 1;
-		const distance = spead * timeDiff;
-		console.log("움직임 호출중", this.lookX, timestamp);
-		if (timestamp !== 0) {
-			console.log(timestamp);
-		}
-		if (this.nextX !== 0) {
+		const distance = this.defaultSpeed * latency;
+
+		if (this.nextX !== undefined) {
 			this.x = this.nextX;
 		}
-		if (this.nextY !== 0) {
+		if (this.nextY !== undefined) {
 			this.y = this.nextY;
 		}
 
@@ -68,6 +68,14 @@ class User {
 			x: this.nextX,
 			y: this.nextY,
 		};
+	}
+
+	hit(dmg) {
+		this.hp -= dmg;
+	}
+
+	heal(heal) {
+		this.hp += heal;
 	}
 
 	// 핑 보내기
