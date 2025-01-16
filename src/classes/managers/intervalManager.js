@@ -12,6 +12,9 @@ class IntervalManager extends BaseManager {
 		if (!this.intervals.has(playerId)) {
 			this.intervals.set(playerId, new Map());
 		}
+		if (this.intervals.get(playerId).has(typ)) {
+			return;
+		}
 		this.intervals.get(playerId).set(typ, setInterval(callback, interval));
 	}
 
@@ -22,7 +25,9 @@ class IntervalManager extends BaseManager {
 	addUpdatePosition(playerId, callback, interval) {
 		this.addPlayer(playerId, callback, interval, INTERVAL_TYPE.UPDATE_POSITION);
 	}
-
+	addBulletUpdate(gameId, callback, interval) {
+		this.addPlayer(gameId, callback, interval, INTERVAL_TYPE.BULLET_POSITION);
+	}
 	// 그 유저 반복 전체 삭제!
 	removePlayer(playerId) {
 		if (this.intervals.has(playerId)) {
