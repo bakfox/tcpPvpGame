@@ -26,6 +26,9 @@ const createGameHandler = ({ socket, userId, payload }) => {
 			level: user.level,
 			exp: user.exp,
 			expMax: user.expMax,
+			x: user.x,
+			y: user.y,
+			defaultBullet: user.defaultBullets,
 			defaultSpead: user.defaultAtck,
 			defaultAtck: user.defaultAtck,
 			defaultHp: user.defaultHp,
@@ -36,7 +39,7 @@ const createGameHandler = ({ socket, userId, payload }) => {
 		const createGameResponse = createResponse(
 			HANDLER_IDS.CREATE_GAME,
 			RESPONSE_SUCCESS_CODE,
-			{ gameId, MAX_PLAYERS, users: [userData] },
+			{ gameId, maxPlayer: MAX_PLAYERS, users: [userData] },
 			userId
 		);
 
