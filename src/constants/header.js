@@ -6,4 +6,7 @@ export const PACKET_TYPE = {
 	NORMAL: 1,
 	GAME_START: 2,
 	LOCATION: 3,
+	EMOTICON: 4,
+	SHOT: 5,
+	BULLET_MOVE: 6,
 };
