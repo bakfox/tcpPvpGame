@@ -20,7 +20,6 @@ export const onData = (socket) => async (data) => {
 			const packet = socket.buffer.slice(totalHeaderLength, length);
 
 			socket.buffer = socket.buffer.slice(length);
-
 			try {
 				switch (packetTpye) {
 					case PACKET_TYPE.PING:
@@ -30,7 +29,10 @@ export const onData = (socket) => async (data) => {
 							const pingMessage = Ping.decode(packet);
 							const user = getUserBySocket(socket);
 							if (!user) {
-								throw new CustomError(ErrorCodes.USER_NOT_FOUND, "유저를 찾을 수 없습니다!");
+								throw new CustomError(
+									ErrorCodes.USER_NOT_FOUND,
+									"유저를 찾을 수 없습니다!"
+								);
 							}
 							user.handlePong(pingMessage);
 						}
@@ -40,7 +42,11 @@ export const onData = (socket) => async (data) => {
 
 						const user = getUserById(userId);
 						if (user && user.sequence !== sequence) {
-							throw new customError(erroCode.INVALID_SEQUENCE, "잘못된 호출값입니다!");
+							throw new customError(
+								erroCode.INVALID_SEQUENCE,
+								"잘못된 호출값입니다!",
+								sequence
+							);
 						}
 
 						const handler = getHandlerById(handlerId);

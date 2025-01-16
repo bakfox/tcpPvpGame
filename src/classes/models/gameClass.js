@@ -1,14 +1,25 @@
-import { gameStartNotification } from "../../utils/notification/gameNotification.js";
+import { INTERVAL_TYPE } from "../../constants/interval.js";
+import {
+	createLocationPacket,
+	createShotPacket,
+	gameStartNotification,
+} from "../../utils/notification/gameNotification.js";
 import IntervalManager from "../managers/intervalManager.js";
+import Bullet from "./bulletClass.js";
+import BulletQueue from "./bulltQueue.js";
 
-const MAX_PLAYERS = 2;
+export const MAX_PLAYERS = 2;
 
 class Game {
 	constructor(id) {
 		this.id = id;
 		this.users = [];
+		this.monster = [];
+		this.bullets = new BulletQueue();
+		this.useBullets = new Map();
 		this.intervalManager = new IntervalManager();
 		this.state = "waiting"; // "waiting" : 기다리는중 "inProgress" : 진행중 상태 설명
+		this.bulletPool();
 	}
 	// 유저 배열에 추가!
 	addUser(user) {
@@ -18,11 +29,29 @@ class Game {
 		this.users.push(user);
 
 		this.intervalManager.addPlayer(user.id, user.ping.bind(user), 1000);
-		if (this.users.length === MAX_PLAYERS) {
+		if (this.users.length === MAX_PLAYERS * 2) {
 			setTimeout(() => {
 				this.startGame();
 			}, 3000);
 		}
+	}
+
+	//총알 관련 풀
+	bulletPool() {
+		for (let i = 0; i < 100; i++) {
+			let bullet = new Bullet(i);
+			this.bullets.enqueue(bullet);
+		}
+	}
+	getBullet() {
+		const bullet = this.bullets.dequeue();
+		this.useBullets.set(bullet.id, bullet);
+		return bullet;
+	}
+	setBullet(bullet) {
+		this.useBullets.delete(bullet.id);
+		this.bullets.enqueue(bullet);
+		console.log(this.useBullets);
 	}
 
 	// 유저 클래스 받아오기!
@@ -42,10 +71,13 @@ class Game {
 
 	// 유저들중 최고 높은 핑 찾기!
 	getMaxLatency() {
-		let maxLatency = 0;
+		let maxLatency = 1;
 		this.users.forEach((user) => {
 			maxLatency = Math.max(maxLatency, user.latency);
 		});
+		if (isNaN(maxLatency)) {
+			maxLatency = 1;
+		}
 		return maxLatency;
 	}
 
@@ -60,13 +92,49 @@ class Game {
 		});
 	}
 
-	getAllLocation() {
+	// 호출시 모두에게 보내주기
+	setAllLocation(userId, timestamp = 0) {
 		const maxLatency = this.getMaxLatency();
-		const locationData = this.user.map((user) => {
-			const { x, y } = user.calculatePosition(maxLatency);
-			return { id: user.id, x, y };
+		const user = this.getUser(userId);
+		const { x, y } = user.calculatePosition(maxLatency, timestamp); // 다음 움직임 위치
+		const locationData = { id: user.id, x, y, lockX: user.lockX, lockY: user.lockY };
+		const locationPacket = createLocationPacket(locationData);
+		this.users.forEach((data) => {
+			data.socket.write(locationPacket);
 		});
-		return createLocationPacket(locationData);
+	}
+
+	// 모두한테 현재 총알들 위치 알려주기
+	setAllBullet() {
+		if (this.useBullets.size === 0) {
+			this.intervalManager.removeInterval(this.id, INTERVAL_TYPE.BULLET_POSITION);
+			console.log(this.useBullets.size, "없어요 ㅠ", this.id);
+			return;
+		}
+
+		const maxLatency = this.getMaxLatency();
+		const dataArray = [];
+
+		this.useBullets.forEach((value, key) => {
+			const { x, y } = value.calculateMove(maxLatency, this);
+
+			dataArray.push({
+				userId: value.userId,
+				bulletId: value.id,
+				x,
+				y,
+				z: value.z,
+				status: value.thisStatuse,
+			});
+
+			if (value.thisStatuse == 2) {
+				this.useBullets.delete(value.id);
+			}
+		});
+		const shotPacket = createShotPacket(dataArray);
+		this.users.forEach((data) => {
+			data.socket.write(shotPacket);
+		});
 	}
 }
 

@@ -3,12 +3,18 @@ import { PACKET_TYPE } from "../../constants/header.js";
 import { getProtoMessages } from "../../init/loadProtos.js";
 import { getNextSequence } from "../../session/userSession.js";
 
-export const createResponse = (handerId, responseCode, data = null, userId) => {
+export const createResponse = (
+	handlerId,
+	responseCode,
+	data = null,
+	userId,
+	type = PACKET_TYPE.NORMAL
+) => {
 	const protoMessages = getProtoMessages();
 	const Response = protoMessages.response.Response;
 
 	const responsePayload = {
-		handerId,
+		handlerId,
 		responseCode,
 		timestamp: Date.now(),
 		data: data ? Buffer.from(JSON.stringify(data)) : null,
@@ -18,10 +24,12 @@ export const createResponse = (handerId, responseCode, data = null, userId) => {
 	const buffer = Response.encode(responsePayload).finish();
 
 	const packetLength = Buffer.alloc(config.packet.totalLength);
-	packetLength.writeInt32BE(buffer.length + config.packet.totalLength + config.packet.typeLength);
+	packetLength.writeInt32BE(
+		buffer.length + config.packet.totalLength + config.packet.typeLength
+	);
 
 	const packeType = Buffer.alloc(config.packet.typeLength);
-	packeType.writeUint8(PACKET_TYPE.NORMAL);
+	packeType.writeUint8(type);
 
 	return Buffer.concat([packetLength, packeType, buffer]);
 };
