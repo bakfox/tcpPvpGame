@@ -21,12 +21,18 @@ export const packetParser = (data) => {
 	const sequence = packet.sequence;
 
 	if (clientVersion !== config.client.version) {
-		throw new customError(erroCode.CLIENT_VERSION_MISMATCH, "클라이언트 버전이 일치하지 않습니다.");
+		throw new customError(
+			erroCode.CLIENT_VERSION_MISMATCH,
+			"클라이언트 버전이 일치하지 않습니다."
+		);
 	}
 
 	const protoTypeName = getProtoTypeNameByHandlerID(handlerId);
 	if (!protoTypeName) {
-		throw new customError(erroCode.UNKNOWN_HANDLER_ID, "알 수 없는 핸들러 아이디 입니다!");
+		throw new customError(
+			erroCode.UNKNOWN_HANDLER_ID,
+			"알 수 없는 핸들러 아이디 입니다!"
+		);
 	}
 
 	const [namespace, typeName] = protoTypeName.split(".");
