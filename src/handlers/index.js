@@ -2,8 +2,10 @@ import { HANDLER_IDS } from "../constants/handlerId.js";
 import customError from "../utils/error/customError.js";
 import { erroCode } from "../utils/error/errorCodes.js";
 import createGameHandler from "./game/createGameHandler.js";
+import emoticonUpdateHandler from "./game/emoticonUpdateHandler.js";
 import joinGameHandler from "./game/joinGameHandler.js";
 import locationUpdateHandler from "./game/locationUpdateHandler.js";
+import shotUpdateHandler from "./game/shotUpdateHandler.js";
 import initalHandler from "./user/initialHandler.js";
 
 // 핸들러 아이디 맵핑입니다!
@@ -23,6 +25,14 @@ const handlers = {
 	[HANDLER_IDS.LOCATION_UPDATE]: {
 		handler: locationUpdateHandler,
 		protoType: "game.LocationUpdatePayload",
+	},
+	[HANDLER_IDS.EMOTICON_UPDATE]: {
+		handler: emoticonUpdateHandler,
+		protoType: "game.EmoticonPayload",
+	},
+	[HANDLER_IDS.SHOT_UPDATE]: {
+		handler: shotUpdateHandler,
+		protoType: "game.RotationUpdatePayload",
 	},
 };
 
