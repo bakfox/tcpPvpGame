@@ -90,6 +90,15 @@ $ node src/app.js
 
 - 조상우 - 제작!
 
+## 🕹️ 게임 영상
+
+(https://youtu.be/JwiP7sfFq28)
+
+---
+
+### 클라이언트 코드
+
+[bakfox](https://github.com/bakfox/node7_unity_client)
 <br>
 
 <h3>좀비 슈팅 게임</h3>
@@ -98,63 +107,191 @@ $ node src/app.js
 
 ### 서버 기능
 
-1. 클라에 요청에 따라
+1. 이동
+
+   - 클라에서 보내주는 방향에 맞게 서버에서 반복을 돌며 서버에서 위치를 변경해 줌 ( 추측항법 적용! )
+   - 게임에 참여한 사용자 중 최대 레이턴시 값을 받아서 계산했다.
+   - 변경한 위치를 클라에게 보내준다.
+
+   ```jsx
+   	calculatePosition(latency, timestamp) {
+   	const distance = this.defaultSpeed * latency;
+
+   	if (this.nextX !== undefined) {
+   		this.x = this.nextX;
+   	}
+   	if (this.nextY !== undefined) {
+   		this.y = this.nextY;
+   	}
+
+   	this.nextX = this.x + distance * this.lookX;
+   	this.nextY = this.y + distance * this.lookY;
+
+   	this.lastUpdateTime = Date.now();
+
+   	return {
+   		x: this.nextX,
+   		y: this.nextY,
+   	};
+   }//이동 로직 코드입니다!
+   ```
+
+2. 공격
+
+   - 공격 로직은 클라에서 마우스를 클릭하면 실행됩니다!
+   - 아래는 총알 풀을 만들 자료 구조형인 큐를 구현한 코드입니다.
+
+   ```jsx
+   class BulletQueue {
+   	constructor() {
+   		this.queue = [];
+   	}
+
+   	enqueue(bullet) {
+   		this.queue.push(bullet);
+   	}
+
+   	dequeue() {
+   		if (this.isEmpty()) {
+   			return null;
+   		}
+   		return this.queue.shift();
+   	}
+
+   	isEmpty() {
+   		return this.queue.length === 0;
+   	}
+
+   	size() {
+   		return this.queue.length;
+   	}
+
+   	peek() {
+   		if (this.isEmpty()) {
+   			return null;
+   		}
+   		return this.queue[0];
+   	}
+   }
+   export default BulletQueue;
+   ```
+
+   - 아래는 실질적인 gameClass에서 사용하는 방식 입니다.
+
+   ```jsx
+   const shotUpdateHandler = ({ socket, userId, payload }) => {
+   	try {
+   		const { gameId, z } = payload;
+   		const gameSession = getGameSession(gameId);
+   		if (!gameSession) {
+   			throw new customError(
+   				ErrorCodes.GAME_NOT_FOUND,
+   				"게임 세션을 찾을 수 없습니다!"
+   			);
+   		}
+   		const user = gameSession.getUser(userId);
+   		if (!user) {
+   			throw new customError(ErrorCodes.USER_NOT_FOUND, "유저를 찾을 수 없습니다.");
+   		}
+   		const radians = (z * Math.PI) / 180;
+
+   		const latency = gameSession.getMaxLatency();
+
+   		const distance = latency * user.defaultBullets * 10;
+
+   		const directionX = Math.cos(radians);
+   		const directionY = Math.sin(radians);
+
+   		let targetX = user.x + directionX * distance;
+   		let targetY = user.y + directionY * distance;
+
+   		const lastVec = { x: targetX, y: targetY };
+
+   		const bullet = gameSession.getBullet();
+   		bullet.initialize(
+   			user.defaultAtck,
+   			z,
+   			user.defaultBullets,
+   			user.defaultBullets * 10,
+   			lastVec,
+   			{ x: user.x, y: user.y },
+   			user.id
+   		);
+   		bullet.thisStatuse = 1;
+
+   		gameSession.intervalManager.addBulletUpdate(
+   			gameId,
+   			gameSession.setAllBullet.bind(gameSession),
+   			100
+   		);
+   	} catch (error) {
+   		handlerError(socket, error);
+   	}
+   };
+
+   export default shotUpdateHandler;
+   ```
+
+   - 반복문이 중복으로 들어가는건 intervalManager쪽에서 검증을 해서 막고 있습니다!
+   - 실질적인 총알의 이동은 플레이어의 이동과 같은 원리로 이동합니다! ( 추측항법 적용! )
+
+3. 이모티콘
+   - 요청 받은 이모티콘의 id와 유저 id를 다시 게임 새션 안에있는 모든 유저에게 보냅니다.
 
 ### 클라이언트 기능
 
 1. 이동
    - 서버에서 보내주는 데이터의 위치로 이동한다! ( 보간 적용! )
 2. 공격
-   - 클릭시 서버에 요청을 보내서 총알의 위치를 받아온다 ( 보간 적용! )
+   - 클릭 시 서버에 요청을 보내서 총알의 위치를 받아온다 ( 보간 적용! )
 3. 이모티콘
    - T를 누르고 원하는 이모티콘 쪽으로 가서 클릭하면 그 이모티콘을 사용하고 모두에게 보여줄 수 있다!
 
 ### 가장 힘들었던 부분.
 
+- 가장 높은 지연시간 찾아주는 코드입니다!
+
 ```jsx
-const FPS = 60;
-const interval = 1000 / FPS;
-
-//이거 호출해서 루프 시작
-function logicLoop() {
-	const start = Date.now();
-	if (!isRunning) {
-		console.log("Logic loop stopped.");
-		return; // 루프를 종료
+// 유저들중 최고 높은 핑 찾기!
+	getMaxLatency() {
+		let maxLatency = 1;
+		this.users.forEach((user) => {
+			maxLatency = Math.max(maxLatency, user.latency);
+		});
+		if (isNaN(maxLatency)) {
+			maxLatency = 1;
+		}
+		return maxLatency;
 	}
-	console.log("Logic executed at:", start);
-	// 여기에 실행할 로직 작성
+```
 
-	const elapsed = Date.now() - start;
-	setTimeout(() => process.nextTick(logicLoop), Math.max(0, interval - elapsed));
-}
+- 이게 0이 되어 버리면 NaN이 발생해서 모든 이동 로직이 마비가 됩니다!
+- 그래서 최소 1 ms 을 기본으로 잡았습니다!
+- 이거 찾는데 이틀 정도 걸린거 같습니다!
 
-logicLoop(); // 루프 시작
+- 총알의 현재 위치들을 보내주는 packet 입니다!
 
-// 실행시 루프 종료
-const endLoop = () => {
-	console.log("Stopping loop...");
-	isRunning = false; // 루프 종료 신호
+```jsx
+// 유저들중 최고 높은 핑 찾기!
+export const createShotPacket = (data) => {
+	const protoMessages = getProtoMessages();
+	const Emoticon = protoMessages.gameNotification.ShotUpdate;
+	const payload = data ? Buffer.from(JSON.stringify({ data })) : null;
+
+	const message = Emoticon.create({ data: payload });
+	const bulletPacket = Emoticon.encode(message).finish();
+	return makeNotification(bulletPacket, PACKET_TYPE.BULLET_MOVE);
 };
 ```
+
+- 이게 클라에서 받을 때 아직 버퍼 타입이라 디코드를 한번 해줘야 했습니다!
+- 그걸 몰라서 한참을 고민하다가 겨우 도움을 받아서 해결했습니다!
+- 그리고 클라에서 데이터를 받을 때 data를 그냥 data로 받는 게 아니라 data를 감싸고 있는 객체를 받아서 사용하는지라 저기 data에도 { data }객체로 감싸 쥐어야 했습니다!
+
+- 나머지는 코드를 만든 의도 대로 실행되어서 행복했습니다!
+- 이번에 코드를 하면서 이렇게 하면 이렇게 실행할 거라는 확신이 좀 더 생긴 거 같습니다!
+- 대부분 문제는 packet이나 payload를 제대로 못 받으면서 생기는 일이 많았습니다!
 
 </br>
 
 <br>
-
-## 🖥️ 와이어 프레임
-
-| 게임 구조 |
-| :-------: |
-
-![image](https://github.com/user-attachments/assets/f94fc582-7797-4a48-81af-fc4fbaf80e79)
-![image](https://github.com/user-attachments/assets/ac3d3f5e-3241-43ad-9edb-d8f3ee73accd)
-
-## 🕹️ 게임 화면
-
-| 시작 화면 |
-| :-------: |
-
-![image](https://github.com/user-attachments/assets/1efa337c-3b08-4b6f-b0eb-afb1cbf19651)
-
----
